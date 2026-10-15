@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShoalWatch · Aquatic health early warning</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0b1620">
+<script>window.__dp=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__dp=e});</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#0b1620;--p:#122231;--p2:#182c3f;--ln:#243b50;--tx:#e6eef5;--mu:#8da2b5;--ac:#4cc3d9;--c0:#2fbf71;--c1:#f2c744;--c2:#f28c28;--c3:#e5484d;--lc:#2fbf71;--lt:#0b1620}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+header{display:flex;align-items:center;gap:14px;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;background:var(--p);border-bottom:1px solid var(--ln)}
+header b{font-size:1.15rem;letter-spacing:.02em}header span{color:var(--mu);font-size:.8rem}
+nav{display:flex;gap:2px;margin-left:auto}
+nav button{background:none;border:0;color:var(--mu);padding:.5rem .9rem;font:inherit;font-weight:600;cursor:pointer;border-bottom:3px solid transparent}
+nav button[aria-selected=true]{color:var(--tx);border-color:var(--ac)}
+#ban{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding:10px 14px;background:var(--lc);color:var(--lt);font-weight:700;font-size:1.05rem}
+#ban small{font-weight:500;font-size:.8rem;margin-left:auto}
+.kp{display:flex;gap:1px;background:var(--ln);border-bottom:1px solid var(--ln)}
+.kp div{flex:1;background:var(--p);padding:6px 14px}.kp b{display:block;font-size:1.25rem}.kp span{color:var(--mu);font-size:.75rem}
+main{padding:10px;max-width:1500px;margin:auto}
+.view{display:none}.view.on{display:block}
+.mon{display:grid;grid-template-columns:300px 1fr 340px;gap:10px}
+@media(max-width:1000px){.mon{grid-template-columns:1fr}#map{order:-1}}
+.pn{background:var(--p);border:1px solid var(--ln);border-radius:6px;padding:10px;min-width:0}
+h2{font-size:.95rem;margin:0 0 8px}h3{font-size:.85rem;margin:12px 0 4px;color:var(--mu)}
+#map{height:calc(100vh - 190px);min-height:420px;border-radius:6px;border:1px solid var(--ln);background:#0e1b27}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) saturate(.45) brightness(.85)}
+.pulse{animation:pl 1.6s ease-in-out infinite}@keyframes pl{50%{fill-opacity:.4}}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+.al{display:block;width:100%;text-align:left;background:var(--p2);color:var(--tx);border:1px solid var(--ln);border-left:6px solid var(--c);border-radius:4px;padding:7px 9px;margin-bottom:6px;font:inherit;cursor:pointer}
+.al[aria-current=true]{outline:2px solid var(--ac)}.al b{display:block}.al span{color:var(--mu);font-size:.8rem}
+.sv{display:inline-block;padding:1px 9px;border-radius:3px;background:var(--c);color:#111;font-weight:700;font-size:.8rem}
+.sv.s3{color:#fff}
+table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--ln);vertical-align:top}th{color:var(--mu);font-weight:600}
+.cap td:first-child{color:var(--mu);width:34%}
+.msg{white-space:pre-wrap;background:var(--bg);border:1px solid var(--ln);border-radius:4px;padding:8px;font-size:.8rem}
+ul{margin:4px 0;padding-left:18px}li{margin:3px 0}
+label{display:block;font-size:.8rem;color:var(--mu);margin:9px 0 3px}
+input,select{width:100%;padding:8px;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:4px;font:inherit}
+button.b{background:var(--ac);color:#06202a;border:0;border-radius:4px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+button.g{background:var(--p2);color:var(--tx);border:1px solid var(--ln)}
+button.b.r{background:var(--c3);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible,.al:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.form{max-width:640px}.mu{color:var(--mu);font-size:.8rem}.wrap{overflow-x:auto}
+#toast{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:4px;font-weight:600;display:none;z-index:9999}
+textarea{width:100%;padding:8px;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:4px;font:inherit;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{display:flex;gap:6px;align-items:center;margin:0;background:var(--p2);border:1px solid var(--ln);border-radius:14px;padding:4px 10px;color:var(--tx);cursor:pointer}.chips input{width:auto}
+.bar{height:10px;border-radius:3px;background:var(--ac)}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+a.b{background:var(--p2);color:var(--tx);border:1px solid var(--ln);display:inline-block}
+header{flex-wrap:wrap}nav{overflow-x:auto;max-width:100%}
+header b{font-size:1.3rem}#ban{font-size:1.2rem}.kp b{font-size:1.5rem}.pn{border-radius:8px}
+#dm{padding:6px 14px;background:#2a2410;color:#f2c744;font-size:.85rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap}#dm[hidden]{display:none}#dm button{padding:3px 10px}
+.about h2{font-size:1.5rem;max-width:30ch;line-height:1.25}.about h3{color:var(--ac)}.about p,.about li{max-width:62ch}.about ol{padding-left:20px}
+body.pres{font-size:17px}body.pres #inst{display:none}body.pres .kp b{font-size:2rem}
+</style>
+</head>
+<body>
+<header><div><b>ShoalWatch</b><br><span>Predicting fish disease outbreaks before they spread</span></div>
+<button type="button" class="b" id="inst" style="margin-left:auto">&#11015; Tap to install</button>
+<button type="button" class="b g" id="pres">Present</button>
+<nav id="nav" role="tablist" style="margin-left:0"></nav></header>
+<div id="ban"></div>
+<div id="dm" hidden></div>
+<div class="kp" id="kp"></div>
+<main>
+<section class="view on" id="v-mon"><div class="mon">
+<div class="pn"><h2>Active alerts</h2><div id="feed"></div></div>
+<div id="map"></div>
+<div class="pn" id="det"></div>
+</div></section>
+
+<section class="view" id="v-rep"><div class="pn form"><h2>Report suspected mortality</h2>
+<p class="mu">Count fish lost to suspected disease. Low oxygen and poor water quality also kill fish, so record them under cause.</p>
+<form id="f" autocomplete="off">
+<label for="farm">Farm name or ID</label><input id="farm" required>
+<label for="water">Shared water source (farms on the same water use the same name)</label><input id="water" list="wl" required><datalist id="wl"></datalist>
+<div class="row"><div><label for="lat">Latitude</label><input id="lat" type="number" step="any" required></div><div><label for="lng">Longitude</label><input id="lng" type="number" step="any" required></div></div>
+<div class="btns" style="margin-top:6px"><button type="button" class="b g" id="gps">Use my location</button><button type="button" class="b g" id="pk">Pick on map</button></div>
+<div class="row"><div><label for="stocked">Fish stocked</label><input id="stocked" type="number" min="1" required></div><div><label for="dead">Fish dead</label><input id="dead" type="number" min="0" required></div></div>
+<div class="row"><div><label for="date">Date</label><input id="date" type="date" required></div>
+<div><label for="cause">Suspected cause</label><select id="cause"><option>Unknown</option><option>Bacterial (Streptococcus)</option><option>Viral (TiLV)</option><option>Parasitic</option><option>Low oxygen</option><option>Poor water quality</option></select></div></div>
+<div class="btns"><button class="b" type="submit">Submit report</button></div>
+</form></div></section>
+
+<section class="view" id="v-warn"><div class="pn form" style="max-width:780px"><h2>Warn farmers</h2>
+<p class="mu">Send the alert and advice to farms on the same water by SMS, WhatsApp or email. Messages name the water, never a farm.</p>
+<div class="row"><div><label for="ww">Water group</label><select id="ww"></select></div><div><label for="wt">Message type</label><select id="wt"><option>Alert with advice</option><option>Advice only</option><option>All clear</option></select></div></div>
+<label>Advice to include</label><div id="wa" class="chips"></div>
+<label for="wm">Message (you can edit it)</label><textarea id="wm" rows="10"></textarea><div class="mu" id="wc"></div>
+<div class="btns"><button class="b" id="wsms">Send SMS</button><button class="b g" id="wwa">WhatsApp</button><button class="b g" id="wmail">Email</button><button class="b g" id="wshr">Share</button><button class="b g" id="wcpy">Copy</button></div>
+<div id="wlinks" class="chips" style="margin-top:8px"></div>
+<h2 style="margin-top:18px">Farmer contacts</h2>
+<div class="row"><div><label for="cn">Name</label><input id="cn"></div><div><label for="cw">Water group</label><select id="cw"></select></div></div>
+<div class="row"><div><label for="cp">Phone (0244... or +233...)</label><input id="cp" type="tel"></div><div><label for="ce">Email</label><input id="ce" type="email"></div></div>
+<div class="btns"><button class="b" id="ca">Add contact</button></div>
+<div class="wrap"><table><thead><tr><th>Name</th><th>Water</th><th>Phone</th><th>Email</th><th></th></tr></thead><tbody id="ctb"></tbody></table></div>
+</div></section>
+
+<section class="view" id="v-ai"><div class="pn"><h2>Shoal AI</h2>
+<p class="mu">Predicts which water groups are likely to escalate. It is an expert-weighted score with a recency-weighted trend forecast, not yet trained on confirmed outcomes. Treat it as screening support, not a diagnosis.</p>
+<div style="max-width:260px"><label for="aih">Forecast horizon</label><select id="aih"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></div>
+<div id="aiB"></div></div></section>
+
+<section class="view" id="v-lab"><div class="pn"><h2>Laboratory confirmation</h2>
+<p class="mu">A laboratory result upgrades certainty to Observed and raises the alert level for confirmed infectious causes.</p>
+<div class="row" style="max-width:640px"><div><label for="lw">Water group</label><select id="lw"></select></div><div><label for="ll">Laboratory or officer</label><input id="ll" placeholder="e.g. Veterinary Services lab, Accra"></div></div>
+<div class="btns"><button class="b" id="la">Request pooled sample</button></div>
+<p class="mu">Take 3 to 5 fresh sick or just-dead fish per farm, bag each farm separately, keep on ice at 2 to 4 °C and deliver within 24 hours.</p>
+<div class="wrap"><table><thead><tr><th>ID</th><th>Water group</th><th>Status</th><th>Confirmed cause</th><th></th></tr></thead><tbody id="lt"></tbody></table></div></div></section>
+
+<section class="view" id="v-dat"><div class="pn"><h2>Detection settings</h2>
+<div class="row" style="max-width:640px"><div><label for="rad">Neighbour distance: <b id="radv">5</b> km</label><input id="rad" type="range" min="1" max="30" value="5"></div>
+<div><label for="zt">Aberration threshold: z ≥ <b id="ztv">3</b></label><input id="zt" type="range" min="2" max="4" step=".5" value="3"></div></div>
+<p class="mu">Each water group is tested against its own recent baseline (EARS C2 style), a cumulative-sum chart (CUSUM) tracks sustained excess, and neighbouring groups inherit risk from groups in Warning.</p>
+<div class="btns"><button class="b g" id="csv">Export CSV</button><button class="b g" id="imp">Import CSV</button><input type="file" id="file" accept=".csv" hidden><button class="b g" id="demo">Load demo data</button><button class="b g" id="demoX">Remove demo data</button><button class="b r" id="clr">Clear all</button></div>
+<h2 style="margin-top:16px">Reports</h2><div class="wrap"><table id="et"><thead><tr><th>Farm</th><th>Date</th><th>Water</th><th>Dead / stocked</th><th>Mortality</th><th>Cause</th><th></th></tr></thead><tbody></tbody></table></div></div></section>
+<section class="view" id="v-abt"><div class="pn about"><h2>One day, Ghana predicts fish disease outbreaks before they spread</h2>
+<div class="two"><div><h3>The problem</h3><p>Farms on the same river, lake or reservoir share disease. Deaths are usually recorded farm by farm, if at all, so one outbreak can reach many farms before anyone is warned.</p>
+<h3>What ShoalWatch does</h3><ol><li>Farmers report fish deaths from a phone.</li><li>Reports are grouped by shared water body.</li><li>Each water body is compared with its own baseline, and neighbours inherit risk.</li><li>Shoal AI forecasts escalation, laboratory results confirm the cause, and farmers are warned by SMS or WhatsApp.</li></ol></div>
+<div><h3>Where it stands</h3><p>Working prototype. The demo farms are simulated. Shoal AI uses expert-set weights and has not yet been trained on confirmed outbreaks.</p>
+<h3>Next</h3><ul><li>Pilot on one shared water body with real farms.</li><li>Link with the Fisheries Commission and Veterinary Services laboratories.</li><li>Train Shoal AI on laboratory-confirmed outcomes.</li><li>Grow into a national early-warning dashboard.</li></ul>
+<p class="mu">A Shoalcare venture. Built by Abubakari, MPhil Aquaculture.</p><div class="btns"><button class="b" id="abgo">See the live demo</button></div></div></div></div></section>
+</main>
+<div id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),KEY='shoalwatch-events-v1',LK='shoalwatch-lab-v1';
+const SEV=['Normal','Advisory','Watch','Warning'],CAPS=['None','Minor','Moderate','Severe'],URG=['Future','Future','Expected','Immediate'];
+const COL=['#2fbf71','#f2c744','#f28c28','#e5484d'];
+const ACT=['Routine daily checks. Keep logging any abnormal deaths.',
+'Check fish and oxygen before sunrise. Remove dead fish daily and log every event.',
+'Notify farms on shared water. Restrict movement of fish, nets and people. Keep fresh sick fish on ice and request a pooled lab sample.',
+'Stop transfers and water discharge. Call the district fisheries officer or Veterinary Services. Send a lab sample within 24 hours and report daily.'];
+let ev=[],lab=[],sel=null,E={G:[]},pickMode=false,nFit=-1,map,layer;
+try{ev=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){}
+try{lab=JSON.parse(localStorage.getItem(LK))||[]}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(ev));localStorage.setItem(LK,JSON.stringify(lab))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rate=e=>e.dead/e.stocked*100,day=d=>Date.parse(d)/864e5,uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length,sd=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1))};
+const km=(a,b)=>{const r=Math.PI/180,x=Math.sin((b.lat-a.lat)*r/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin((b.lng-a.lng)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)};
+
+/* ---------- detection engine ---------- */
+function engine(){
+ const R=+$('rad').value,Zt=+$('zt').value,all=ev.filter(e=>e.stocked>0&&isFinite(day(e.date))).sort((a,b)=>day(a.date)-day(b.date));
+ if(!all.length)return{G:[],ref:0};
+ const ref=day(all[all.length-1].date),rs=all.map(rate),mu=mean(rs),s0=Math.max(sd(rs),3),M={};
+ all.forEach(e=>{const k=(e.water||'Unknown').trim().toLowerCase();(M[k]=M[k]||{k,name:e.water||'Unknown',ev:[]}).ev.push(e)});
+ const G=Object.values(M).map(g=>{
+  const xs=g.ev.map(rate),n=xs.length,last=xs[n-1],prev=xs.slice(Math.max(0,n-8),n-1),own=prev.length>=3;
+  const bm=own?mean(prev):mu,bs=Math.max(own?sd(prev):s0,2),z=(last-bm)/bs;
+  let S=0;xs.forEach(x=>{S=Math.max(0,S+(x-mu)/s0-.5)});
+  const rec=g.ev.filter(e=>ref-day(e.date)<=14),st=rec.reduce((a,e)=>a+e.stocked,0),dd=rec.reduce((a,e)=>a+e.dead,0),rp=st?dd/st*100:0,fr=new Set(rec.map(e=>e.farm)).size;
+  const cf=lab.find(r=>r.st==='Result received'&&r.res&&r.w.toLowerCase()===g.k),inf=!!cf&&/bacter|vir|parasit/i.test(cf.res);
+  let lv=0;const why=[],up=(l,t)=>{lv=Math.max(lv,l);why.push(t)};
+  if(rp>=10)up(1,`Recent mortality ${rp.toFixed(1)}% over 14 days`);
+  if(rp>=20)up(2,'Recent mortality above the 20% Watch limit');
+  if(z>=Zt&&last>=5)up(2,`Aberration: latest report z = ${z.toFixed(1)} against ${own?'its own baseline':'the network baseline'}`);
+  if(S>=4)up(2,`CUSUM ${S.toFixed(1)} is above the limit of 4 (sustained excess)`);
+  if(rp>=30)up(3,'Recent mortality above the 30% Warning limit');
+  if(lv>=2&&fr>=2&&rp>=15)up(3,`${fr} farms affected on the same water`);
+  if(inf&&rp>=10)up(3,`Laboratory confirmed: ${cf.res}`);
+  const lat=mean(g.ev.map(e=>e.lat)),lng=mean(g.ev.map(e=>e.lng)),rad=Math.max(1.5,...g.ev.map(e=>km({lat,lng},e)))+1;
+  return{...g,xs,n,last,z,S,rp,fr,bm,cf:cf&&cf.res,inf,lv,why,lat,lng,rad,farms:new Set(g.ev.map(e=>e.farm)).size,fish:g.ev.reduce((a,e)=>a+e.stocked,0)}});
+ G.forEach(g=>g.nb=G.filter(o=>o!==g&&o.ev.some(a=>g.ev.some(b=>km(a,b)<=R))));
+ const L0=G.map(g=>g.lv);
+ G.forEach(g=>{const w=g.nb.filter(o=>L0[G.indexOf(o)]===3);if(w.length&&g.lv<2){g.lv=2;g.why.push(`Within ${R} km of ${w.length} group${w.length>1?'s':''} in Warning (spread risk)`)}});
+ G.forEach(g=>{g.cert=g.cf?'Observed':g.lv>=2&&g.fr>=2?'Likely':'Possible'});aiScore(G);
+ G.sort((a,b)=>b.lv*100+b.rp-(a.lv*100+a.rp));
+ return{G,ref,R}}
+
+function alertText(g){return `ShoalWatch ${SEV[g.lv]}: ${g.name}\nSeverity ${CAPS[g.lv]}, urgency ${URG[g.lv]}, certainty ${g.cert}.\nPooled mortality ${g.rp.toFixed(1)}% over 14 days across ${g.fr} farm${g.fr===1?'':'s'}. ${g.why[0]||''}.\nAction: ${ACT[g.lv]}\nThis alert does not name any farm.`}
+function spark(g){
+ const w=310,h=110,m={l:30,r:8,t:8,b:18},t0=day(g.ev[0].date),t1=Math.max(day(g.ev[g.n-1].date),t0+1),ym=Math.max(40,Math.ceil(Math.max(...g.xs)/10)*10);
+ const X=t=>m.l+(t-t0)/(t1-t0)*(w-m.l-m.r),Y=v=>m.t+(1-v/ym)*(h-m.t-m.b);let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Mortality history for ${esc(g.name)}">`;
+ [[10,COL[1]],[30,COL[3]]].forEach(([v,c])=>{if(v<=ym)s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-dasharray="4 3"/><text x="2" y="${Y(v)+4}" fill="${c}" font-size="10">${v}%</text>`});
+ s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(g.bm)}" y2="${Y(g.bm)}" stroke="#8da2b5" stroke-dasharray="1 3"/><polyline fill="none" stroke="#4cc3d9" stroke-width="2" points="${g.ev.map((e,i)=>X(day(e.date)).toFixed(1)+','+Y(g.xs[i]).toFixed(1)).join(' ')}"/>`;
+ g.ev.forEach((e,i)=>{const v=g.xs[i];s+=`<circle cx="${X(day(e.date)).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="4" fill="${COL[v>=30?3:v>=10?1:0]}"><title>${v.toFixed(1)}% on ${esc(e.date)}</title></circle>`});
+ return s+`<text x="${m.l}" y="${h-4}" fill="#8da2b5" font-size="10">${esc(g.ev[0].date)}</text><text x="${w-m.r}" y="${h-4}" fill="#8da2b5" font-size="10" text-anchor="end">${esc(g.ev[g.n-1].date)}</text></svg>`}
+
+/* ---------- render ---------- */
+function render(){
+ E=engine();{const on=ev.some(e=>/^Demo farm/.test(e.farm)),d=$('dm');d.hidden=!on;d.innerHTML=on?'<b>Demo data</b> Simulated farms for illustration, not real reports.<button class="b g" id="dmx">Start with my own data</button>':'';if(on)$('dmx').onclick=()=>$('demoX').click()}const G=E.G,mx=Math.max(0,...G.map(g=>g.lv)),act=G.filter(g=>g.lv>=1),top=G.filter(g=>g.lv===mx);
+ const b=$('ban');b.style.setProperty('--lc',COL[mx]);b.style.setProperty('--lt',mx===3?'#fff':'#0b1620');
+ b.innerHTML=!G.length?'No data yet. Submit a report or load demo data.':mx===0?'All clear. No active alerts.':`${SEV[mx]}: ${top.length} water group${top.length>1?'s':''}<small>${act.length} active alert${act.length>1?'s':''}</small>`;
+ if(G.length)b.innerHTML+=`<small${mx===0?'':' style="margin-left:0"'}>Data as of ${new Date(E.ref*864e5).toISOString().slice(0,10)}</small>`;
+ $('kp').innerHTML=[[G.length,'Water groups'],[act.length,'Active alerts'],[new Set(ev.map(e=>e.farm)).size,'Farms reporting'],[G.filter(g=>g.lv>=2).reduce((a,g)=>a+g.fish,0).toLocaleString(),'Fish in Watch or Warning']].map(k=>`<div><b>${k[0]}</b><span>${k[1]}</span></div>`).join('');
+ if(!sel||!G.some(g=>g.k===sel))sel=G[0]&&G[0].k;
+ $('feed').innerHTML=G.length?G.map(g=>`<button class="al" style="--c:${COL[g.lv]}" data-k="${esc(g.k)}" aria-current="${g.k===sel}"><b>${esc(g.name)} <span class="sv s${g.lv}" style="--c:${COL[g.lv]}">${SEV[g.lv]}</span></b><span>${g.rp.toFixed(1)}% in 14 days · ${g.farms} farm${g.farms===1?'':'s'} · z ${g.z.toFixed(1)} · risk ${pc(g.risk)}</span></button>`).join(''):'<p class="mu">No water groups yet.</p>';
+ detail();drawMap();tables();warnUI();aiUI();
+ $('wl').innerHTML=[...new Set(ev.map(e=>e.water))].map(w=>`<option value="${esc(w)}">`).join('')}
+
+function detail(){
+ const g=E.G.find(x=>x.k===sel),d=$('det');if(!g){d.innerHTML='<h2>Alert detail</h2><p class="mu">Select a water group to see its alert.</p>';return}
+ d.innerHTML=`<h2>${esc(g.name)} <span class="sv s${g.lv}" style="--c:${COL[g.lv]}">${SEV[g.lv]}</span></h2>
+ <table class="cap"><tr><td>Severity</td><td>${CAPS[g.lv]}</td></tr><tr><td>Urgency</td><td>${URG[g.lv]}</td></tr><tr><td>Certainty</td><td>${g.cert}${g.cf?' ('+esc(g.cf)+')':''}</td></tr><tr><td>Area</td><td>${esc(g.name)}, ${g.farms} farm${g.farms===1?'':'s'}, ${g.nb.length} neighbouring group${g.nb.length===1?'':'s'}</td></tr><tr><td>Escalation risk</td><td>${pc(g.risk)} (Shoal AI)</td></tr><tr><td>Signals</td><td>14-day ${g.rp.toFixed(1)}%, z ${g.z.toFixed(1)}, CUSUM ${g.S.toFixed(1)}</td></tr></table>
+ <h3>Why this level</h3>${g.why.length?'<ul>'+g.why.map(w=>`<li>${esc(w)}</li>`).join('')+'</ul>':'<p class="mu">No detection rule has fired.</p>'}
+ <h3>Mortality per report (dotted line is the baseline)</h3>${spark(g)}
+ <h3>Public alert text</h3><div class="msg">${esc(alertText(g))}</div>
+ <div class="btns"><button class="b r" id="aWarn">Warn farmers</button><button class="b g" id="aCpy">Copy</button></div>
+ <h3>Recommended response</h3><p>${esc(ACT[g.lv])}</p>
+ ${g.lv>=2&&!g.cf?'<div class="btns"><button class="b r" id="aLab">Request lab sample</button></div>':''}
+ <p class="mu">Screening detection from farmer reports. Only laboratory tests confirm a disease.</p>`;
+ const t=alertText(g);
+ $('aWarn').onclick=()=>{$('ww').value=g.k;$('ww').onchange();show('warn')};
+ $('aCpy').onclick=async()=>{try{await navigator.clipboard.writeText(t);toast('Alert copied')}catch(e){toast('Copy failed')}};
+ if($('aLab'))$('aLab').onclick=()=>{labReq(g.name,'');show('lab')}}
+
+function drawMap(){
+ if(!map)return;layer.clearLayers();
+ E.G.forEach(g=>{const c=COL[g.lv];
+  L.circle([g.lat,g.lng],{radius:g.rad*1000,color:c,weight:1.5,fillColor:c,fillOpacity:.14,className:g.lv===3?'pulse':''}).on('click',()=>choose(g.k)).addTo(layer);
+  g.ev.forEach(e=>L.circleMarker([e.lat,e.lng],{radius:4+Math.min(rate(e),50)/8,color:'#0b1620',weight:1,fillColor:c,fillOpacity:.9}).bindPopup(`${esc(e.farm)}<br>${e.dead} / ${e.stocked} dead (${rate(e).toFixed(1)}%)<br>${esc(e.date)}`).on('click',()=>choose(g.k)).addTo(layer))});
+ if(ev.length!==nFit&&ev.length){nFit=ev.length;try{map.fitBounds(ev.map(e=>[e.lat,e.lng]),{maxZoom:11,padding:[40,40]})}catch(e){}}}
+function choose(k){sel=k;render()}
+$('feed').onclick=e=>{const b=e.target.closest('[data-k]');if(b)choose(b.dataset.k)};
+
+function tables(){
+ $('et').tBodies[0].innerHTML=ev.map((e,i)=>`<tr><td>${esc(e.farm)}</td><td>${esc(e.date)}</td><td>${esc(e.water)}</td><td>${e.dead} / ${e.stocked}</td><td>${rate(e).toFixed(1)}%</td><td>${esc(e.cause)}</td><td><button class="b g" data-d="${i}" aria-label="Delete report from ${esc(e.farm)}">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="mu">No reports yet.</td></tr>';
+ const ws=[...new Set(ev.map(e=>e.water))],v=$('lw').value;$('lw').innerHTML=ws.map(w=>`<option>${esc(w)}</option>`).join('');if(v)$('lw').value=v;
+ $('lt').innerHTML=lab.map((r,i)=>`<tr><td>${esc(r.id)}</td><td>${esc(r.w)}<br><span class="mu">${esc(r.lab||'')}</span></td><td><select data-s="${i}">${['Requested','Sent to lab','Result received'].map(s=>`<option${r.st===s?' selected':''}>${s}</option>`).join('')}</select></td><td>${r.st==='Result received'?`<input data-r="${i}" value="${esc(r.res||'')}" placeholder="e.g. Bacterial (Streptococcus)">`:'-'}</td><td><button class="b g" data-l="${i}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="mu">No sample requests yet.</td></tr>'}
+$('et').onclick=e=>{const b=e.target.closest('[data-d]');if(b&&confirm('Delete this report?')){ev.splice(+b.dataset.d,1);save();render()}};
+$('lt').onchange=e=>{const t=e.target;if(t.dataset.s!==undefined){lab[t.dataset.s].st=t.value}else if(t.dataset.r!==undefined){lab[t.dataset.r].res=t.value.trim()}else return;save();render()};
+$('lt').onclick=e=>{const b=e.target.closest('[data-l]');if(b&&confirm('Delete this request?')){lab.splice(+b.dataset.l,1);save();render()}};
+function labReq(w,l){if(!w){toast('Submit a report first');return}lab.unshift({id:'SW-'+new Date().toISOString().slice(2,10).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,5).toUpperCase(),w,lab:l,st:'Requested',res:''});save();render();toast('Sample request created')}
+$('la').onclick=()=>labReq($('lw').value,$('ll').value);
+
+/* ---------- reporting ---------- */
+$('date').value=new Date().toISOString().slice(0,10);
+$('f').onsubmit=x=>{x.preventDefault();
+ const e={farm:$('farm').value.trim(),water:$('water').value.trim(),lat:+$('lat').value,lng:+$('lng').value,stocked:+$('stocked').value,dead:+$('dead').value,date:$('date').value,cause:$('cause').value,uid:uid()};
+ if(e.dead>e.stocked){toast('Dead fish cannot exceed fish stocked');return}
+ ev.push(e);save();$('f').reset();$('date').value=new Date().toISOString().slice(0,10);sel=e.water.toLowerCase();render();show('mon');toast('Report submitted')};
+function getLoc(quiet){if(!navigator.geolocation){if(!quiet)toast('Location not supported');return}navigator.geolocation.getCurrentPosition(p=>{if(quiet&&$('lat').value&&$('lng').value)return;$('lat').value=p.coords.latitude.toFixed(5);$('lng').value=p.coords.longitude.toFixed(5);toast('Location set')},()=>{if(!quiet)toast('Location unavailable. Allow access or enter it manually.')},{enableHighAccuracy:true,timeout:20000})}
+$('gps').onclick=()=>getLoc(false);
+$('pk').onclick=()=>{pickMode=true;show('mon');toast('Tap the map to set the farm location')};
+
+/* ---------- data ---------- */
+$('rad').oninput=()=>{$('radv').textContent=$('rad').value;render()};$('zt').oninput=()=>{$('ztv').textContent=$('zt').value;render()};
+$('clr').onclick=()=>{if(confirm('Delete all reports and lab requests from this browser?')){ev=[];lab=[];save();render()}};
+const clearDemo=()=>{ev=ev.filter(e=>!/^Demo farm/.test(e.farm));lab=lab.filter(r=>!/DEMO/.test(r.id))};
+$('demoX').onclick=()=>{clearDemo();save();render()};
+$('demo').onclick=()=>{clearDemo();let a=20261011;const r=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+ const W=[['Densu inlet A',6.10,-.42,5,.06,.045],['Densu inlet B',6.13,-.40,4,.05,.03],['Pra stream',6.04,-.76,4,.05,0],['Volta zone 1',6.21,.07,5,.04,0],['Ada estuary',5.80,.62,3,.06,0]],C=['Unknown','Low oxygen','Parasitic'];let n=0;
+ W.forEach(w=>{for(let k=0;k<w[3];k++){n++;const lat=w[1]+(r()-.5)*.05,lng=w[2]+(r()-.5)*.05;
+  [-56,-42,-28,-14,-4].forEach((o,s)=>{const st=800+Math.round(r()*2200),m=Math.min(.6,Math.max(.01,w[4]+w[5]*s+(r()-.5)*.05));
+   ev.push({farm:'Demo farm '+n,water:w[0],lat,lng,stocked:st,dead:Math.round(st*m),date:new Date(Date.now()+(o-Math.floor(r()*4))*864e5).toISOString().slice(0,10),cause:w[5]?'Unknown':C[Math.floor(r()*3)],uid:uid()})})}});
+ lab.unshift({id:'SW-DEMO1',w:'Densu inlet A',lab:'Veterinary Services lab (demo)',st:'Result received',res:'Bacterial (Streptococcus)'},{id:'SW-DEMO2',w:'Densu inlet B',lab:'Veterinary Services lab (demo)',st:'Sent to lab',res:''});
+ save();sel=null;render();show('mon')};
+$('csv').onclick=()=>{const h=['farm','lat','lng','water','stocked','dead','date','cause'],q=v=>'"'+String(v).replace(/"/g,'""')+'"',t=[h.join(',')].concat(ev.map(e=>h.map(k=>q(e[k])).join(','))).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='shoalwatch-reports.csv';a.click()};
+function parseCSV(t){const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}if(c!==''||r.length){r.push(c);rows.push(r)}return rows}
+$('imp').onclick=()=>$('file').click();
+$('file').onchange=async()=>{const f=$('file').files[0];if(!f)return;const rows=parseCSV((await f.text()).replace(/^\uFEFF/,'')),h=rows.shift().map(x=>x.trim().toLowerCase());
+ if(['farm','lat','lng','water','stocked','dead','date'].some(k=>!h.includes(k))){toast('CSV needs: farm, lat, lng, water, stocked, dead, date');$('file').value='';return}
+ let ok=0,bad=0;rows.forEach(r=>{const o={};h.forEach((k,i)=>o[k]=(r[i]||'').trim());const e={farm:o.farm,lat:+o.lat,lng:+o.lng,water:o.water,stocked:+o.stocked,dead:+o.dead,date:o.date,cause:o.cause||'Unknown',uid:uid()};
+  if(!e.farm||!e.water||isNaN(e.lat)||isNaN(e.lng)||!(e.stocked>0)||!(e.dead>=0)||e.dead>e.stocked||!isFinite(day(e.date))){bad++;return}ev.push(e);ok++});
+ save();render();$('file').value='';toast(ok+' imported'+(bad?', '+bad+' skipped':''))};
+
+/* ---------- Shoal AI ---------- */
+const FN=['Latest mortality','Acceleration','Neighbour exposure','Farms affected','Sustained excess (CUSUM)','Lab-confirmed infection'],FW=[1.4,1.2,1,.5,.6,.8],FB=-2.4;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),pc=p=>(p*100).toFixed(0)+'%';
+const Phi=z=>{const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2),q=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-q:q};
+function aiScore(G){G.forEach(g=>{const pv=g.n>1?g.xs[g.n-2]:g.last,f=[Math.min(g.last/50,2),Math.min(Math.max(g.last-pv,0)/30,2),g.nb.length?Math.min(mean(g.nb.map(o=>o.rp))/50,2):0,Math.min(g.fr/5,2),Math.min(g.S/6,2),g.inf?1:0];
+ g.drv=f.map((v,j)=>FW[j]*v);g.risk=clamp(1/(1+Math.exp(-(FB+g.drv.reduce((a,b)=>a+b,0)))),.02,.97)})}
+function fc(g){const t=g.ev.map(e=>day(e.date)),tm=t[g.n-1];let a=g.last,b=0,sg=6;
+ if(g.n>=3){const w=t.map(x=>Math.exp(-(tm-x)/45)),sw=w.reduce((p,q)=>p+q,0),mt=t.reduce((p,x,i)=>p+w[i]*x,0)/sw,my=g.xs.reduce((p,y,i)=>p+w[i]*y,0)/sw;let sxx=0,sxy=0;
+  t.forEach((x,i)=>{sxx+=w[i]*(x-mt)**2;sxy+=w[i]*(x-mt)*(g.xs[i]-my)});b=sxx>1e-9?clamp(sxy/sxx,-1,1):0;a=my+b*(tm-mt);
+  sg=Math.max(2.5,Math.sqrt(t.reduce((p,x,i)=>p+w[i]*(g.xs[i]-(my+b*(x-mt)))**2,0)/Math.max(1,g.n-2)))}
+ return{tm,at:d=>{const y=clamp(a+b*d,0,100),s=sg*Math.sqrt(1+d/30);return{y,lo:clamp(y-1.28*s,0,100),hi:clamp(y+1.28*s,0,100),s}}}}
+function fcSvg(g,F,h){const w=330,ht=170,m={l:32,r:8,t:8,b:20},t0=day(g.ev[0].date)-2,t1=F.tm+h,ym=Math.max(40,Math.ceil(Math.max(...g.xs,F.at(h).hi)/10)*10),
+ X=t=>m.l+(t-t0)/(t1-t0)*(w-m.l-m.r),Y=v=>m.t+(1-v/ym)*(ht-m.t-m.b);let s=`<svg viewBox="0 0 ${w} ${ht}" width="100%" role="img" aria-label="Mortality forecast for ${esc(g.name)}">`;
+ [[10,COL[1]],[30,COL[3]]].forEach(([v,c])=>{if(v<=ym)s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-dasharray="4 3"/><text x="2" y="${Y(v)+4}" fill="${c}" font-size="10">${v}%</text>`});
+ let up='',dn='';for(let k=0;k<=20;k++){const d=h*k/20,q=F.at(d);up+=`${X(F.tm+d).toFixed(1)},${Y(q.hi).toFixed(1)} `;dn=`${X(F.tm+d).toFixed(1)},${Y(q.lo).toFixed(1)} `+dn}
+ s+=`<polygon points="${up}${dn}" fill="#4cc3d9" fill-opacity=".18"/><polyline fill="none" stroke="#4cc3d9" stroke-width="1.5" points="${g.ev.map((e,i)=>X(day(e.date)).toFixed(1)+','+Y(g.xs[i]).toFixed(1)).join(' ')}"/>`;
+ s+=`<line x1="${X(F.tm)}" y1="${Y(g.last)}" x2="${X(t1)}" y2="${Y(F.at(h).y)}" stroke="#e6eef5" stroke-dasharray="5 4" stroke-width="2"/>`;
+ g.ev.forEach((e,i)=>{s+=`<circle cx="${X(day(e.date)).toFixed(1)}" cy="${Y(g.xs[i]).toFixed(1)}" r="3.5" fill="${COL[g.xs[i]>=30?3:g.xs[i]>=10?1:0]}"/>`});
+ return s+`<text x="${X(F.tm)}" y="${ht-5}" fill="#8da2b5" font-size="10" text-anchor="middle">last report</text><text x="${w-m.r}" y="${ht-5}" fill="#8da2b5" font-size="10" text-anchor="end">+${h} days</text></svg>`}
+const topDrv=g=>g.drv.map((v,j)=>[v,j]).sort((a,b)=>b[0]-a[0]).filter(x=>x[0]>.05).slice(0,2).map(x=>FN[x[1]].toLowerCase()).join(' and ')||'none stand out';
+function aiUI(){const G=E.G,h=+$('aih').value,box=$('aiB');
+ if(!G.length){box.innerHTML='<p class="mu">Submit reports or load demo data to run Shoal AI.</p>';return}
+ const R=G.slice().sort((a,b)=>b.risk-a.risk),g=G.find(x=>x.k===sel)||R[0],F=fc(g),e=F.at(h),mx=Math.max(...g.drv,.01);
+ box.innerHTML=`<div class="two"><div><h3>Escalation risk by water group</h3><div class="wrap"><table><thead><tr><th>Group</th><th>Level</th><th>Risk</th><th>In ${h} d</th><th>Over 30%</th></tr></thead><tbody>${R.map(x=>{const f=fc(x).at(h);return `<tr data-k="${esc(x.k)}" style="cursor:pointer${x===g?';background:var(--p2)':''}"><td>${esc(x.name)}</td><td><span class="sv s${x.lv}" style="--c:${COL[x.lv]}">${SEV[x.lv]}</span></td><td><b>${pc(x.risk)}</b></td><td>${f.y.toFixed(1)}%</td><td>${pc(1-Phi((30-f.y)/f.s))}</td></tr>`}).join('')}</tbody></table></div>
+ <p class="mu">Risk is the chance the next report in the group reaches 20% mortality or more.</p></div>
+ <div><h3>${esc(g.name)}: forecast</h3>${fcSvg(g,F,h)}<p class="mu">Dashed line is the expected path, shaded band the 80% range.</p>
+ <h3>What drives the risk</h3>${g.drv.map((v,j)=>`<div style="display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:center;margin:3px 0"><span class="mu">${FN[j]}</span><div class="bar" style="width:${(v/mx*100).toFixed(0)}%;min-width:2px;opacity:${v>.05?1:.3}"></div></div>`).join('')}</div></div>
+ <h3>Ask Shoal AI</h3><div class="row" style="grid-template-columns:1fr auto"><input id="aiQ" placeholder="e.g. what is the forecast? what should I do?" aria-label="Ask Shoal AI"><button class="b" id="aiAsk">Ask</button></div><div class="msg" id="aiA" style="margin-top:8px">${esc(g.name)}: ${pc(g.risk)} escalation risk. Expected mortality ${e.y.toFixed(1)}% in ${h} days (${e.lo.toFixed(0)} to ${e.hi.toFixed(0)}%). Main drivers: ${topDrv(g)}.</div>
+ <p class="mu">Preliminary: weights come from expert judgement and will improve once confirmed lab outcomes are logged.</p>`;
+ const ask=()=>{const s=$('aiQ').value.toLowerCase(),q=G.find(x=>s.includes(x.k))||g,f=fc(q).at(h);let t;
+  if(/forecast|next|will|expect|predict/.test(s))t=`${q.name}: expected mortality about ${f.y.toFixed(1)}% in ${h} days (${f.lo.toFixed(0)} to ${f.hi.toFixed(0)}%). Chance of going above 30%: ${pc(1-Phi((30-f.y)/f.s))}.`;
+  else if(/why|driver|reason/.test(s))t=`${q.name} risk is ${pc(q.risk)}. Biggest drivers: ${topDrv(q)}.`;
+  else if(/do|action|advice|should/.test(s))t=`${q.name} (${SEV[q.lv]}): ${ACT[q.lv]}`;
+  else t=`Highest risk: ${R[0].name} at ${pc(R[0].risk)}. ${R.filter(x=>x.risk>=.5).length} of ${R.length} groups are at 50% or more.`;$('aiA').textContent=t};
+ $('aiAsk').onclick=ask;$('aiQ').onkeydown=x=>{if(x.key==='Enter'){x.preventDefault();ask()}}}
+$('aiB').onclick=e=>{const r=e.target.closest('tr[data-k]');if(r)choose(r.dataset.k)};$('aih').onchange=aiUI;
+
+/* ---------- Warn farmers: SMS, WhatsApp, email ---------- */
+const ADV={'Daily checks':'Check fish and water every day. Measure oxygen before sunrise and watch for gasping, spinning, surface swimming or skin and gill sores. Log any abnormal deaths in ShoalWatch.',
+'Dead fish':'Remove dead and dying fish every day with a dedicated net or bucket. Bury them with lime well away from water. Never throw dead fish into a pond, river or canal.',
+'Stop movement':'Do not move fish, nets, buckets or boots between ponds or farms unless cleaned, disinfected and sun-dried. Do not release water from affected ponds until you have advice.',
+'Shared water':'Tell farms on your water the same day abnormal deaths start. Do not discharge water from sick stock into a shared channel. Agree stocking and fallow periods together.',
+'Lab sample':'Keep 3 to 5 fresh sick or just-dead fish cold on ice in a sealed bag, with no preservatives, and deliver to the laboratory within 24 hours. Call your district fisheries officer to arrange it.',
+'Oxygen':'Low oxygen is most dangerous before sunrise. Add aeration or clean inflow, cut feeding and avoid feeding late in the day. Low oxygen also makes infections worse.',
+'Water quality':'Test ammonia, pH and turbidity. Pause feeding briefly, reduce fish density and exchange water only if the source is clean.',
+'Bacterial':'Bacterial outbreaks such as Streptococcus follow stress from warm water, low oxygen and crowding. Raise oxygen, cut feeding and density, remove dead fish quickly. Use antibiotics only on a veterinarian\'s advice.',
+'Viral':'Viral disease such as TiLV has no treatment. Stop all movement of fish and equipment, report to the fisheries officer or Veterinary Services, and stock only from hatcheries that show test results.',
+'Parasitic':'Check gills and skin in good light and get a diagnosis before treating. Quarantine new fish and use separate equipment for each pond.',
+'Feeding':'Feed fresh, dry feed in small amounts. Cut feeding when fish look unwell or oxygen is low, and never overfeed.',
+'Restocking':'After harvest or loss, clean, disinfect, dry and rest the pond before restocking. Quarantine new fingerlings for 2 weeks and stock all-in, all-out.'};
+const CLEAR='Keep up daily checks and keep logging any abnormal deaths.',ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+let adv=new Set(),lastW=null,ct=[];try{ct=JSON.parse(localStorage.getItem('shoalwatch-contacts-v1'))||[]}catch(e){}
+const saveC=()=>{try{localStorage.setItem('shoalwatch-contacts-v1',JSON.stringify(ct))}catch(e){}};
+const norm=p=>{p=p.replace(/[^\d+]/g,'');return /^0\d{9}$/.test(p)?'+233'+p.slice(1):p};
+const wg=()=>E.G.find(g=>g.k===$('ww').value),recip=g=>g?ct.filter(c=>c.w==='*'||c.w.toLowerCase()===g.k):[];
+function defAdv(g){const s=new Set(['Daily checks']);if(g.lv>=1)s.add('Dead fish');if(g.lv>=2){s.add('Stop movement');s.add('Shared water');s.add('Lab sample')}
+ const cs=(g.cf?[g.cf]:g.ev.slice(-4).map(e=>e.cause)).join(' ');[['Bacterial',/bacter/i],['Viral',/vir/i],['Parasitic',/parasit/i],['Oxygen',/oxygen/i],['Water quality',/water quality/i]].forEach(([k,r])=>{if(r.test(cs))s.add(k)});return s}
+function chips(){$('wa').innerHTML=Object.keys(ADV).map(k=>`<label><input type="checkbox" value="${esc(k)}"${adv.has(k)?' checked':''}>${esc(k)}</label>`).join('')}
+function compose(){const g=wg(),m=$('wm');if(!g){m.value='';$('wc').textContent='No water groups yet. Submit a report first.';return}
+ const t=$('wt').value,L=[...document.querySelectorAll('#wa input:checked')].map(i=>'- '+ADV[i.value]).join('\n');
+ m.value=t==='All clear'?`ShoalWatch update: ${g.name} is back to normal levels. ${CLEAR}`:t==='Advice only'?`ShoalWatch advice for ${g.name}:\n${L}`:alertText(g)+(L?'\n\nAdvice:\n'+L:'');count()}
+function count(){const g=wg(),n=m=>m.length,L=$('wm').value.length;$('wc').textContent=`${L} characters${L>160?` (about ${Math.ceil(L/153)} SMS parts, so trim it for SMS or use WhatsApp)`:''}. ${recip(g).length} saved contact${recip(g).length===1?'':'s'} on this water.`}
+function warnUI(){const G=E.G,v=$('ww').value||sel;$('ww').innerHTML=G.map(g=>`<option value="${esc(g.k)}">${esc(g.name)} (${SEV[g.lv]})</option>`).join('');if(G.some(g=>g.k===v))$('ww').value=v;
+ const g=wg();if(g&&g.k!==lastW){lastW=g.k;adv=defAdv(g)}chips();compose();
+ const cv=$('cw').value;$('cw').innerHTML='<option value="*">All groups</option>'+[...new Set(ev.map(e=>e.water))].map(w=>`<option>${esc(w)}</option>`).join('');if(cv)$('cw').value=cv;
+ $('ctb').innerHTML=ct.map((c,i)=>`<tr><td>${esc(c.n)}</td><td>${c.w==='*'?'All groups':esc(c.w)}</td><td>${esc(c.p)}</td><td>${esc(c.e)}</td><td><button class="b g" data-c="${i}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="mu">No contacts yet. Add farmers to send alerts in one tap.</td></tr>'}
+$('ww').onchange=()=>{const g=wg();if(g){lastW=g.k;adv=defAdv(g)}chips();compose()};$('wt').onchange=compose;
+$('wa').onchange=e=>{e.target.checked?adv.add(e.target.value):adv.delete(e.target.value);compose()};$('wm').oninput=count;
+$('ca').onclick=()=>{const c={n:$('cn').value.trim(),w:$('cw').value,p:norm($('cp').value),e:$('ce').value.trim()};if(!c.n||(!c.p&&!c.e)){toast('Add a name and a phone or email');return}ct.push(c);saveC();['cn','cp','ce'].forEach(i=>$(i).value='');warnUI();toast('Contact added')};
+$('ctb').onclick=e=>{const b=e.target.closest('[data-c]');if(b){ct.splice(+b.dataset.c,1);saveC();warnUI()}};
+const msg=()=>$('wm').value,subj=()=>{const g=wg();return g?`ShoalWatch ${SEV[g.lv]}: ${g.name}`:'ShoalWatch'};
+$('wsms').onclick=()=>{const n=recip(wg()).map(c=>c.p).filter(Boolean);location.href='sms:'+n.join(',')+(ios?'&':'?')+'body='+encodeURIComponent(msg())};
+$('wmail').onclick=()=>{const n=recip(wg()).map(c=>c.e).filter(Boolean);location.href='mailto:?'+(n.length?'bcc='+n.join(',')+'&':'')+'subject='+encodeURIComponent(subj())+'&body='+encodeURIComponent(msg())};
+$('wwa').onclick=()=>{const n=recip(wg()).filter(c=>c.p),t=encodeURIComponent(msg());
+ if(!n.length){window.open('https://wa.me/?text='+t,'_blank');return}
+ $('wlinks').innerHTML=n.map(c=>`<a class="b g" style="text-decoration:none;padding:6px 12px;border-radius:14px" target="_blank" rel="noopener" href="https://wa.me/${c.p.replace(/\D/g,'')}?text=${t}">${esc(c.n)}</a>`).join('');toast('Tap each name to send on WhatsApp')};
+$('wshr').onclick=async()=>{try{navigator.share?await navigator.share({title:subj(),text:msg()}):(await navigator.clipboard.writeText(msg()),toast('Message copied'))}catch(e){}};
+$('wcpy').onclick=async()=>{try{await navigator.clipboard.writeText(msg());toast('Message copied')}catch(e){toast('Copy failed')}};
+
+/* ---------- navigation and start-up ---------- */
+const V=[['abt','About'],['mon','Monitor'],['warn','Warn'],['ai','Shoal AI'],['rep','Report'],['lab','Lab'],['dat','Data']];
+function show(k){V.forEach(v=>{$('v-'+v[0]).classList.toggle('on',v[0]===k);$('t-'+v[0]).setAttribute('aria-selected',v[0]===k)});if(k==='warn')warnUI();if(k==='rep'&&!$('lat').value&&!$('lng').value)getLoc(true);if(k==='mon'&&map)setTimeout(()=>map.invalidateSize(),50)}
+V.forEach(v=>{const b=document.createElement('button');b.id='t-'+v[0];b.textContent=v[1];b.setAttribute('role','tab');b.onclick=()=>show(v[0]);$('nav').appendChild(b)});
+if(window.L){map=L.map('map').setView([6.1,-0.45],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map);
+ map.on('click',e=>{if(!pickMode)return;pickMode=false;$('lat').value=e.latlng.lat.toFixed(5);$('lng').value=e.latlng.lng.toFixed(5);show('rep');toast('Location set')})}
+else $('map').innerHTML='<p class="mu" style="padding:14px">The map needs an internet connection. Alerts still work offline.</p>';
+(function(){const b=$('inst');
+ if(matchMedia('(display-mode: standalone)').matches||navigator.standalone){b.style.display='none';return}
+ addEventListener('appinstalled',()=>b.style.display='none');
+ async function diag(){
+  if(location.protocol==='file:')return 'You opened the file from your device. Upload all five files to a host (Netlify, Vercel, GitHub Pages) and open the https link in Chrome.';
+  if(location.protocol!=='https:'&&!/^(localhost|127\.)/.test(location.hostname))return 'This page is not on https, so Chrome will not offer install. Host it on Netlify, Vercel, Cloudflare Pages or GitHub Pages.';
+  if(/FBAN|FBAV|Instagram|WhatsApp|; wv\)/i.test(navigator.userAgent))return 'You are inside another app\'s browser. Open this link in Chrome itself.';
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent))return 'On iPhone, tap the Share button, then Add to Home Screen.';
+  try{const m=await fetch('manifest.webmanifest',{cache:'no-store'});if(!m.ok)return 'manifest.webmanifest is missing on your host (error '+m.status+'). Upload it next to index.html.';
+   const j=await m.json();for(const i of j.icons||[]){const x=await fetch(i.src,{cache:'no-store'});if(!x.ok)return i.src+' is missing on your host. Upload both icon files next to index.html.'}}
+  catch(e){return 'manifest.webmanifest could not be read. Check it is uploaded next to index.html and is valid.'}
+  const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();
+  if(!reg)return 'sw.js is not registered. Upload sw.js next to index.html, reload the page, wait a few seconds and tap again.';
+  return 'Your files are fine, but Chrome has not offered the install prompt. Usual reasons: the app is already installed (look in your app list), or you dismissed the prompt earlier. Open the Chrome menu (three dots) and choose Install app or Add to Home screen, or clear this site\'s data and reload.'}
+ b.onclick=async()=>{const p=window.__dp;
+  getLoc(true);
+  if(p){p.prompt();try{await p.userChoice}catch(x){}window.__dp=null;return}
+  b.disabled=true;const t=b.textContent;b.textContent='Checking...';const m=await diag();b.disabled=false;b.textContent=t;alert(m)}})();
+show('mon');render();
+$('abgo').onclick=()=>show('mon');$('pres').onclick=()=>{document.body.classList.toggle('pres');if(map)setTimeout(()=>map.invalidateSize(),50)};
+try{if(!ev.length&&!localStorage.getItem('sw-seen')){localStorage.setItem('sw-seen','1');$('demo').click()}}catch(e){}
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
